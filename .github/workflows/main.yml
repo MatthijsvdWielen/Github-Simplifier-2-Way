@@ -41,7 +41,7 @@ jobs:
           # Sync changes from Simplifier to this runner's local folder
           fhir project sync --strategy TakeRemote
 
-      - name: Commit and Push IG Changes (guides only)
+      - name: Commit and Push IG Changes + Create PR (allowlist)
         env:
           GH_TOKEN: ${{ secrets.PR_TOKEN }}
         run: |
@@ -68,9 +68,9 @@ jobs:
             exit 1
           fi
 
-          # Stage only allowlisted paths. These files keep getting updated once you kick off the pipeline so decided to sync these as well.
+          # Stage only allowlisted paths
           git add -- guides/ .simplifier/project.snapshot.json fhirpkg.lock.json
-          
+
           # If nothing staged, we're done
           if [[ -z "$(git diff --cached --name-only)" ]]; then
             echo "No allowlisted changes detected."
@@ -86,21 +86,17 @@ jobs:
           BRANCH="simplifier-sync-$(date -u +%Y%m%d-%H%M%S)"
           git checkout -b "$BRANCH"
 
-          # Commit
+          # Commit and push
           git commit -m "Automated sync from Simplifier"
-
-          # Push branch
           git push -u origin "$BRANCH"
 
-          # Create PR (if one doesn't already exist for this branch)
-          env:
-            GH_TOKEN: ${{ secrets.PR_TOKEN }}
-          run: |
-            echo "GH_TOKEN is set? $([[ -n "${GH_TOKEN:-}" ]] && echo yes || echo no)"
-            gh auth status
+          # Debug (optional): prove token is present and gh is authenticated
+          echo "GH_TOKEN is set? $([[ -n "${GH_TOKEN:-}" ]] && echo yes || echo no)"
+          gh auth status
+
+          # Create PR
           gh pr create \
             --base main \
             --head "$BRANCH" \
             --title "Simplifier sync ($(date -u +%Y-%m-%d))" \
-            --body "Automated sync from Simplifier.net.\n\nAllowlisted paths:\n- guides/\n- .simplifier/project.snapshot.json\n- fhirpkg.lock.json" \
-            || gh pr edit "$BRANCH" --title "Simplifier sync ($(date -u +%Y-%m-%d))"
+            --body "Automated sync from Simplifier.net.\n\nAllowlisted paths:\n- guides/\n- .simplifier/project.snapshot.json\n- fhirpkg.lock.json"
