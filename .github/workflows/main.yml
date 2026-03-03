@@ -70,8 +70,9 @@ jobs:
             exit 1
           fi
 
-          # Stage only allowlisted paths
+          # Stage only allowlisted paths. These files keep getting updated once you kick off the pipeline so decided to sync these as well.
           git add -- guides/ .simplifier/project.snapshot.json fhirpkg.lock.json
+          
           # If nothing staged, we're done
           if [[ -z "$(git diff --cached --name-only)" ]]; then
             echo "No allowlisted changes detected."
