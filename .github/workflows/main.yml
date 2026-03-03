@@ -10,6 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pull-requests: write
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -71,11 +72,31 @@ jobs:
 
           # Stage only allowlisted paths
           git add -- guides/ .simplifier/project.snapshot.json fhirpkg.lock.json
-
-          if [[ -n "$(git diff --cached --name-only)" ]]; then
-            git commit -m "Automated sync from Simplifier"
-            git pull --rebase origin main
-            git push origin main
-          else
+          # If nothing staged, we're done
+          if [[ -z "$(git diff --cached --name-only)" ]]; then
             echo "No allowlisted changes detected."
+            exit 0
           fi
+
+          # Ensure we are up-to-date before branching
+          git fetch origin main
+          git checkout main
+          git pull --ff-only origin main
+
+          # Create a unique branch name
+          BRANCH="simplifier-sync-$(date -u +%Y%m%d-%H%M%S)"
+          git checkout -b "$BRANCH"
+
+          # Commit
+          git commit -m "Automated sync from Simplifier"
+
+          # Push branch
+          git push -u origin "$BRANCH"
+
+          # Create PR (if one doesn't already exist for this branch)
+          gh pr create \
+            --base main \
+            --head "$BRANCH" \
+            --title "Simplifier sync ($(date -u +%Y-%m-%d))" \
+            --body "Automated sync from Simplifier.net.\n\nAllowlisted paths:\n- guides/\n- .simplifier/project.snapshot.json\n- fhirpkg.lock.json" \
+            || gh pr edit "$BRANCH" --title "Simplifier sync ($(date -u +%Y-%m-%d))"
