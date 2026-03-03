@@ -47,6 +47,8 @@ jobs:
           fhir project sync --strategy TakeRemote
 
       - name: Commit and Push IG Changes (guides only)
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
 
