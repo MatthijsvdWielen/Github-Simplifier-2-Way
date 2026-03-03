@@ -1,5 +1,5 @@
 {
-  "Timestamp": "2026-03-03T13:59:52.3185403+00:00",
+  "Timestamp": "2026-03-03T14:35:20.1565813+00:00",
   "Files": {
     "package.json": {
       "Length": 104,
@@ -32,9 +32,9 @@
       "Hash": "9A6EBF2EBC80B463829A8EBE16C9F915"
     },
     "guides/Testing-guide-to-github/Home/Resources/toc.yaml": {
-      "Length": 90,
-      "LastWriteTime": "2026-03-03T13:56:34+00:00",
-      "Hash": "7925F193DF6304076C08D530341E56B1"
+      "Length": 142,
+      "LastWriteTime": "2026-03-03T14:27:24+00:00",
+      "Hash": "7B87021DE27028F0BF7DEA2709395A74"
     },
     "guides/Testing-guide-to-github/Home/toc.yaml": {
       "Length": 84,
@@ -45,6 +45,11 @@
       "Length": 32,
       "LastWriteTime": "2026-03-03T13:56:16+00:00",
       "Hash": "3E2BC1817DFD8F2BD16B380005C2838F"
+    },
+    "guides/Testing-guide-to-github/Home/Resources/A-new-page.page.md": {
+      "Length": 29,
+      "LastWriteTime": "2026-03-03T14:27:30+00:00",
+      "Hash": "E6A4453143501D9521440996283A4E54"
     }
   }
 }
