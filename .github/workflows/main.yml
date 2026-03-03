@@ -26,13 +26,8 @@ jobs:
       - name: Install Firely Terminal
         run: dotnet tool install -g firely.terminal
 
-
-
-
-
       - name: Authenticate & Sync
         env:
-          GH_TOKEN: ${{ github.token }}
           SIMPLIFIER_USERNAME: ${{ secrets.SIMPLIFIER_USERNAME }}
           SIMPLIFIER_PASSWORD: ${{ secrets.SIMPLIFIER_PASSWORD }}
           PROJECT_KEY: 'Github 2-Way Sync'
@@ -48,7 +43,7 @@ jobs:
 
       - name: Commit and Push IG Changes (guides only)
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.PR_TOKEN }}
         run: |
           set -euo pipefail
 
