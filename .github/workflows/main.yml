@@ -43,7 +43,7 @@ jobs:
 
       - name: Commit and Push IG Changes + Create PR (allowlist)
         env:
-          GH_TOKEN: ${{ secrets.PR_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
           set -euo pipefail
 
