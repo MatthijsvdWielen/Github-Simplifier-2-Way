@@ -1,0 +1,6 @@
+.github/
+.git/
+.simplifier/
+.fhir/
+README.md
+LICENSE

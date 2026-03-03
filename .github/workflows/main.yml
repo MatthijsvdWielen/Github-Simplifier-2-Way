@@ -1,0 +1,81 @@
+name: Sync Simplifier to GitHub
+
+on:
+  # schedule:
+  #  - cron: '0 * * * *' # Runs every hour, or change as needed
+  workflow_dispatch: # Allows manual trigger
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          # Important: Fetch all history so we can check for conflicts
+          fetch-depth: 0 
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Install Firely Terminal
+        run: dotnet tool install -g firely.terminal
+
+
+
+
+
+      - name: Authenticate & Sync
+        env:
+          SIMPLIFIER_USERNAME: ${{ secrets.SIMPLIFIER_USERNAME }}
+          SIMPLIFIER_PASSWORD: ${{ secrets.SIMPLIFIER_PASSWORD }}
+          PROJECT_KEY: 'Github 2-Way Sync'
+        run: |
+          # Log in non-interactively
+          fhir login email="$SIMPLIFIER_USERNAME" password="$SIMPLIFIER_PASSWORD"
+
+          # Link the project
+          fhir project link $PROJECT_KEY --strategy TakeRemote || true
+          
+          # Sync changes from Simplifier to this runner's local folder
+          fhir project sync --strategy TakeRemote
+
+      - name: Commit and Push IG Changes (guides only)
+        run: |
+          set -euo pipefail
+
+          git config --global user.name "Simplifier Sync Bot"
+          git config --global user.email "bot@matthijs.com"
+
+          # Never allow workflow files to be modified/committed by this bot
+          git reset -- .github/workflows || true
+          git checkout -- .github/workflows || true
+
+          # SAFEGUARD: allow only guides/ plus these two files
+          ALLOW_REGEX='^(guides/|\.simplifier/project\.snapshot\.json$|fhirpkg\.lock\.json$)'
+
+          BAD="$(git status --porcelain | awk '{print $2}' | grep -Ev "$ALLOW_REGEX" || true)"
+          if [[ -n "$BAD" ]]; then
+            echo "Unexpected changes detected outside allowlist. Refusing to commit."
+            echo "Offending files:"
+            echo "$BAD"
+            echo ""
+            echo "Full status:"
+            git status --porcelain
+            exit 1
+          fi
+
+          # Stage only allowlisted paths
+          git add -- guides/ .simplifier/project.snapshot.json fhirpkg.lock.json
+
+          if [[ -n "$(git diff --cached --name-only)" ]]; then
+            git commit -m "Automated sync from Simplifier"
+            git pull --rebase origin main
+            git push origin main
+          else
+            echo "No allowlisted changes detected."
+          fi
