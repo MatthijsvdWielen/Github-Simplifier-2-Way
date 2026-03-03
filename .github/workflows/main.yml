@@ -32,6 +32,7 @@ jobs:
 
       - name: Authenticate & Sync
         env:
+          GH_TOKEN: ${{ github.token }}
           SIMPLIFIER_USERNAME: ${{ secrets.SIMPLIFIER_USERNAME }}
           SIMPLIFIER_PASSWORD: ${{ secrets.SIMPLIFIER_PASSWORD }}
           PROJECT_KEY: 'Github 2-Way Sync'
