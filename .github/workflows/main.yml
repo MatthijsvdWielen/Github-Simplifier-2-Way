@@ -93,6 +93,11 @@ jobs:
           git push -u origin "$BRANCH"
 
           # Create PR (if one doesn't already exist for this branch)
+          env:
+            GH_TOKEN: ${{ secrets.PR_TOKEN }}
+          run: |
+            echo "GH_TOKEN is set? $([[ -n "${GH_TOKEN:-}" ]] && echo yes || echo no)"
+            gh auth status
           gh pr create \
             --base main \
             --head "$BRANCH" \
