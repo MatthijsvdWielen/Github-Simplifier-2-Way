@@ -1,0 +1,21 @@
+{
+  "resourceType": "StructureDefinition",
+  "url": "https://example.org/fhir/StructureDefinition/MyCareTeam",
+  "name": "MyCareTeam",
+  "status": "draft",
+  "fhirVersion": "4.0.1",
+  "kind": "resource",
+  "abstract": false,
+  "type": "CareTeam",
+  "baseDefinition": "http://hl7.org/fhir/StructureDefinition/CareTeam",
+  "derivation": "constraint",
+  "differential": {
+    "element": [
+      {
+        "id": "CareTeam.id",
+        "path": "CareTeam.id",
+        "min": 1
+      }
+    ]
+  }
+}
