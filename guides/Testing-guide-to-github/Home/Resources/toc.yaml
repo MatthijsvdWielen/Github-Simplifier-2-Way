@@ -2,3 +2,5 @@
   filename: Index.page.md
 - name: CareTeam
   filename: CareTeam.page.md
+- name: A new page
+  filename: A-new-page.page.md
