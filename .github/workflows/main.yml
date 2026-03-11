@@ -40,63 +40,87 @@ jobs:
           
           # Sync changes from Simplifier to this runner's local folder
           fhir project sync --strategy TakeRemote
-
-      - name: Commit and Push IG Changes + Create PR (allowlist)
+          
+      - name: Commit and Push Changes + Create 2 PRs (Guides + ALERT)
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
 
           git config --global user.name "Simplifier Sync Bot"
           git config --global user.email "bot@matthijs.com"
 
+          # Ensure we know what we're basing on
+          git fetch origin main
+          BASE_SHA="$(git rev-parse origin/main)"
+          echo "Baseline SHA: $BASE_SHA"
+
           # Never allow workflow files to be modified/committed by this bot
-          git reset -- .github/workflows || true
           git checkout -- .github/workflows || true
 
-          # SAFEGUARD: allow only guides/ plus these two files
-          ALLOW_REGEX='^(guides/|\.simplifier/project\.snapshot\.json$|fhirpkg\.lock\.json$)'
+          # Create a patch of ALL sync changes and store it OUTSIDE the repo
+          git add -A
+          git diff --staged > /tmp/sync_changes.patch
 
-          BAD="$(git status --porcelain | awk '{print $2}' | grep -Ev "$ALLOW_REGEX" || true)"
-          if [[ -n "$BAD" ]]; then
-            echo "Unexpected changes detected outside allowlist. Refusing to commit."
-            echo "Offending files:"
-            echo "$BAD"
-            echo ""
-            echo "Full status:"
-            git status --porcelain
-            exit 1
+          # Reset working copy back to the baseline, fully clean
+          git checkout -B main "$BASE_SHA"
+          git reset --hard "$BASE_SHA"
+          git clean -ffdx
+
+          # ---------------------------------------------------------
+          # PR #1: GUIDES / NARRATIVE PR
+          # ---------------------------------------------------------
+          BRANCH_GUIDES="sync/simplifier-guides-$(date -u +%Y%m%d-%H%M%S)-$RANDOM"
+          git checkout -b "$BRANCH_GUIDES" "$BASE_SHA"
+
+          git apply /tmp/sync_changes.patch
+
+          # Never include workflows
+          git checkout -- .github/workflows || true
+
+          # Stage only guides + expected metadata
+          git add guides/ .simplifier/project.snapshot.json fhirpkg.lock.json || true
+
+          if [[ -n "$(git diff --cached --name-only)" ]]; then
+            git commit -m "docs: automated update of IG narrative from Simplifier"
+            git push -u origin "$BRANCH_GUIDES"
+
+            gh pr create \
+              --base main --head "$BRANCH_GUIDES" \
+              --title "📝 Simplifier Narrative Update" \
+              --body "Automated sync of IG pages from Simplifier.net."
+          else
+            echo "No guides/snapshot/lock changes detected; skipping Guides PR."
           fi
 
-          # Stage only allowlisted paths
-          git add -- guides/ .simplifier/project.snapshot.json fhirpkg.lock.json
+          # ---------------------------------------------------------
+          # PR #2: ALERT / RESOURCE FAILSAFE
+          # ---------------------------------------------------------
+          BRANCH_ALERT="sync/simplifier-alert-$(date -u +%Y%m%d-%H%M%S)-$RANDOM"
+          git checkout -B "$BRANCH_ALERT" "$BASE_SHA"
 
-          # If nothing staged, we're done
-          if [[ -z "$(git diff --cached --name-only)" ]]; then
-            echo "No allowlisted changes detected."
-            exit 0
+          git apply /tmp/sync_changes.patch
+
+          # Never include workflows
+          git checkout -- .github/workflows || true
+
+          # Stage everything, then unstage the "expected" stuff
+          git add -A
+          git reset -- guides/ .simplifier/project.snapshot.json fhirpkg.lock.json || true
+          git reset -- .github/workflows || true
+
+          if [[ -n "$(git diff --cached --name-only)" ]]; then
+            echo "Unexpected changes detected; creating ALERT PR with these files:"
+            git diff --cached --name-only
+
+            git commit -m "alert: unexpected resource changes detected on Simplifier"
+            git push -u origin "$BRANCH_ALERT"
+
+            gh pr create \
+              --base main --head "$BRANCH_ALERT" \
+              --title "⚠️ ALERT: Unexpected Resource Changes" \
+              --body "Changes detected outside guides/ and the expected sync metadata files. Review carefully."
+          else
+            echo "No unexpected changes detected; skipping ALERT PR."
           fi
 
-          # Ensure we are up-to-date before branching
-          git fetch origin main
-          git checkout main
-          git pull --ff-only origin main
-
-          # Create a unique branch name
-          BRANCH="simplifier-sync-$(date -u +%Y%m%d-%H%M%S)"
-          git checkout -b "$BRANCH"
-
-          # Commit and push
-          git commit -m "Automated sync from Simplifier"
-          git push -u origin "$BRANCH"
-
-          # Debug (optional): prove token is present and gh is authenticated
-          echo "GH_TOKEN is set? $([[ -n "${GH_TOKEN:-}" ]] && echo yes || echo no)"
-          gh auth status
-
-          # Create PR
-          gh pr create \
-            --base main \
-            --head "$BRANCH" \
-            --title "Simplifier sync ($(date -u +%Y-%m-%d))" \
-            --body "Automated sync from Simplifier.net.\n\nAllowlisted paths:\n- guides/\n- .simplifier/project.snapshot.json\n- fhirpkg.lock.json"
