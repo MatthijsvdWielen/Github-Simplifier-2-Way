@@ -2,5 +2,8 @@
 .git/
 .simplifier/
 .fhir/
+
+!/guides/
+
 README.md
 LICENSE
