@@ -1,5 +1,5 @@
 {
-  "Timestamp": "2026-03-03T15:05:50.6064754+00:00",
+  "Timestamp": "2026-03-11T11:48:34.8237677+00:00",
   "Files": {
     "package.json": {
       "Length": 104,
@@ -47,9 +47,9 @@
       "Hash": "3E2BC1817DFD8F2BD16B380005C2838F"
     },
     "guides/Testing-guide-to-github/Home/Resources/A-new-page.page.md": {
-      "Length": 29,
-      "LastWriteTime": "2026-03-03T14:27:30+00:00",
-      "Hash": "E6A4453143501D9521440996283A4E54"
+      "Length": 70,
+      "LastWriteTime": "2026-03-11T11:44:02+00:00",
+      "Hash": "49C0F56521A3512E0417C9D5C23034BD"
     }
   }
 }
