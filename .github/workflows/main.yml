@@ -43,7 +43,7 @@ jobs:
           
       - name: Commit and Push Changes + Create 2 PRs (Guides + ALERT)
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN}}
         run: |
           set -euo pipefail
 
